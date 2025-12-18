@@ -13,7 +13,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-API_BASE_URL = "http://localhost:8000"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Use environment variable for API URL, fallback to localhost
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 def check_backend_health():
     """Check if backend is running"""

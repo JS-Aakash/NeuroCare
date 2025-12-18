@@ -15,7 +15,14 @@ import numpy as np
 from PIL import Image
 import pytesseract
 import io
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Tesseract setup - check environment variable first, then fallback to default Linux/Windows paths
+tesseract_path = os.getenv("TESSERACT_CMD")
+if tesseract_path:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+elif os.name == 'nt': # Windows
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+else: # Linux/Mac
+    pytesseract.pytesseract.tesseract_cmd = 'tesseract'
 
 load_dotenv()
 HuggingFace_token = os.getenv("HUGGINGFACE_TOKEN")

@@ -23,13 +23,14 @@ def start_backend():
 
 def start_frontend():
     """Start the Streamlit frontend"""
-    print("🎨 Starting Streamlit frontend...")
+    port = os.getenv("PORT", "8501")
+    print(f"🎨 Starting Streamlit frontend on port {port}...")
     time.sleep(5)
     try:
         subprocess.run([
             sys.executable, "-m", "streamlit", "run", "frontend.py",
-            "--server.port", "8501",
-            "--server.address", "localhost"
+            "--server.port", port,
+            "--server.address", "0.0.0.0"
         ], check=True)
     except KeyboardInterrupt:
         print("Frontend stopped")
@@ -37,7 +38,7 @@ def start_frontend():
         print(f"Frontend error: {e}")
 
 def check_files():
-    """Check if required files exist"""
+    """Check if required files and environment variables exist"""
     required_files = ['app.py', 'frontend.py']
     missing = [f for f in required_files if not Path(f).exists()]
     
@@ -45,15 +46,18 @@ def check_files():
         print(f"❌ Missing required files: {', '.join(missing)}")
         return False
     
-    if not Path('.env').exists():
-        print("⚠️  No .env file found. Creating one...")
+    # Check if we have API keys in system environment OR .env file
+    has_api_key = os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+    
+    if not Path('.env').exists() and not has_api_key:
+        print("⚠️  No .env file found and no API keys in environment.")
+        print("Creating a template .env file...")
         with open('.env', 'w') as f:
-            f.write("# OpenAI API Configuration\n")
-            f.write("OPENAI_API_KEY=your_openai_api_key_here\n")
-            f.write("\n# Optional: Other API keys\n")
-            f.write("# FDA_API_KEY=your_fda_api_key_here\n")
-        print("✅ .env file created. Please add your OpenAI API key.")
-        return False
+            f.write("# API Configuration\n")
+            f.write("OPENROUTER_API_KEY=your_key_here\n")
+            f.write("OPENAI_API_KEY=your_key_here\n")
+        print("✅ Template .env file created.")
+        # Don't exit if we're in a container, environment variables might still be loaded from the platform
     
     return True
 
@@ -62,7 +66,7 @@ def main():
     print("=" * 50)
     
     if not check_files():
-        input("Press Enter to exit...")
+        print("❌ Initialization failed. Check the logs above.")
         return
     
     print("✅ All required files found")

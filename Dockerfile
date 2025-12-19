@@ -27,7 +27,7 @@ EXPOSE 8501
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV TESSERACT_CMD=tesseract
-ENV API_BASE_URL=http://localhost:8000
+ENV API_BASE_URL=http://127.0.0.1:8000
 
 # Run both services using the run.py script
 CMD ["python", "run.py"]

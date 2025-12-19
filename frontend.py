@@ -18,16 +18,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Use environment variable for API URL, fallback to localhost
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+# Use environment variable for API URL, fallback to 127.0.0.1 (more stable in containers)
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
+@st.cache_data(ttl=10)
 def check_backend_health():
-    """Check if backend is running"""
+    """Check if backend is running with a more robust check"""
     try:
-        response = requests.get(f"{API_BASE_URL}/health", timeout=5)
-        return response.status_code == 200
-    except:
-        return False
+        # Increased timeout because models taking a long time to load can block the event loop
+        response = requests.get(f"{API_BASE_URL}/health", timeout=10)
+        return response.status_code == 200, "OK"
+    except Exception as e:
+        return False, str(e)
 
 def analyze_drug_interactions(drugs: List[str], age: int, conditions: List[str] = []):
     """Call backend API for drug interaction analysis"""
@@ -163,12 +165,16 @@ def main():
     st.title("💊 NeuroCare - AI Medical Prescription Verification")
     st.markdown("### 🔬 Analyze drug interactions and get safe alternative recommendations")
     
-    if not check_backend_health():
-        st.error("🔴 Backend server is not running. Please start the FastAPI backend first.")
-        st.code("python app.py", language="bash")
+    is_healthy, health_msg = check_backend_health()
+    if not is_healthy:
+        st.error(f"🔴 Backend server is not responding yet.")
+        st.info("🕒 The AI models are large and take 2-3 minutes to load. Please refresh this page in a minute.")
+        with st.expander("Technical details"):
+            st.write(f"Connection error: {health_msg}")
+            st.write(f"Attempting to connect to: {API_BASE_URL}")
         return
     
-    st.success("🟢 Connected to backend server")
+    st.success("🟢 AI Engine Ready")
     
     # Initialize session state for extracted drugs
     if 'extracted_drugs' not in st.session_state:
